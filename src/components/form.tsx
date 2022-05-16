@@ -11,8 +11,11 @@ import {
   Container,
   Fade,
   Text,
+  useToast,
 } from "@chakra-ui/react";
 import { useForm, SubmitHandler } from "react-hook-form";
+import { useMutation } from "react-query";
+import axios from "axios";
 
 interface Inputs {
   name: string;
@@ -20,6 +23,7 @@ interface Inputs {
 }
 
 const Form = () => {
+  const toast = useToast();
   const [result, setResult] = useState<string>("");
 
   const {
@@ -29,13 +33,29 @@ const Form = () => {
     formState: { errors },
   } = useForm<Inputs>();
 
+  const mutation = useMutation(
+    (body: Inputs) => axios.post("/.netlify/functions/submit", body),
+    {
+      onSuccess: (res) => {
+        reset();
+        setResult(res.data.message);
+      },
+      onError: (err) => {
+        if (err instanceof Error) {
+          toast({
+            title: err.message,
+            status: "error",
+            isClosable: true,
+            position: "top",
+          });
+        }
+      },
+    }
+  );
+
   const onSubmit: SubmitHandler<Inputs> = async (values) => {
-    const res = await fetch("/.netlify/functions/submit", {
-      method: "POST",
-      body: JSON.stringify({ name: values.name, age: values.age }),
-    }).then((res) => res.json());
-    reset();
-    setResult(res.message);
+    toast.closeAll();
+    mutation.mutate({ name: values.name, age: values.age });
   };
 
   return (
@@ -100,7 +120,13 @@ const Form = () => {
                   Minimum 17 years old, Maximum 75 years old
                 </FormHelperText>
               </FormControl>
-              <Button colorScheme="blue" w="full" type="submit">
+              <Button
+                isLoading={mutation.isLoading}
+                loadingText="Submitting"
+                colorScheme="blue"
+                w="full"
+                type="submit"
+              >
                 Submit
               </Button>
             </VStack>
