@@ -35,7 +35,7 @@ const Form = () => {
       body: JSON.stringify({ name: values.name, age: values.age }),
     }).then((res) => res.json());
     reset();
-    setResult(res);
+    setResult(res.message);
   };
 
   return (
@@ -47,7 +47,7 @@ const Form = () => {
               {result && (
                 <Box>
                   <Fade in>
-                    <pre>{JSON.stringify(result, null, 2)}</pre>
+                    <Text>{result} ✅</Text>
                   </Fade>
                 </Box>
               )}
